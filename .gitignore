@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.log
+
+# 虛擬環境
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# macOS 系統檔案
+.DS_Store
+
+# VSCode 設定
+.vscode/
+*.code-workspace
+
+# Docker 資料（如果有）
+docker-volume-data/
+
+# Node.js（如果有）
+node_modules/
+
+# SQLite 或資料庫
+*.db
+*.sqlite3
+
+# 暫存與備份檔案
+*.tmp
+*.bak
+*.swp
+
+# 保留空資料夾
+!.gitkeep
+
+# 忽略特定的 JSON 檔案
+memory.json
+
+# 忽略音訊資料夾 
+audio/

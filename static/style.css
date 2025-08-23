@@ -1,0 +1,360 @@
+html, body {
+  margin: 0; padding: 0; overflow: hidden;
+  background: #111;
+  width: 100%;
+  height: 100%;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: white;
+  position: relative;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  z-index: 0;
+}
+
+/* 背景粒子層 */
+#particles-js {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 控制按鈕 */
+#controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  border-radius: 24px;
+  box-shadow: 0 0 15px #aa88ffcc;
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 180px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #eee;
+}
+
+#controls button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 999px;
+  padding: 10px 16px;
+  border: none;
+  background: linear-gradient(145deg, #ff92c8, #b18aff);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(186, 112, 220, 0.5);
+  transition: all 0.3s ease;
+  user-select: none;
+  justify-content: center;
+}
+
+#controls button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 18px rgba(186, 112, 220, 0.8);
+}
+
+#controls button:active {
+  transform: scale(0.95);
+  box-shadow: inset 0 2px 6px #440077aa;
+}
+
+/* 按鈕文字 */
+#controls button:nth-child(1)::before { content: "💤 "; }
+#controls button:nth-child(2)::before { content: "👆 "; }
+#controls button:nth-child(3)::before { content: "😊 "; }
+#controls button:nth-child(4)::before { content: "😳 "; }
+#controls button:nth-child(5)::before { content: "😄 "; }
+#controls button:nth-child(6)::before { content: "😠 "; }
+#controls button:nth-child(7)::before { content: "😢 "; }
+#controls button:nth-child(9)::before { content: "🔁 "; }
+#controls button:nth-child(10)::before { content: "🧹 "; }
+#controls button:nth-child(11)::before { content: "🗑️ "; }
+
+/* 聊天區容器，含聊天室本體和收合按鈕 */
+#chat-container {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: stretch;
+  z-index: 25;
+  gap: 6px;
+}
+
+/* 收合按鈕 */
+#toggle-chat-btn {
+  background: linear-gradient(145deg, #a566ff, #5b1cc8);
+  border: none;
+  color: white;
+  width: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 700;
+  transition: background 0.3s, transform 0.3s;
+  user-select: none;
+  box-shadow: 0 0 8px #7b4beecc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* 按鈕 hover 效果 */
+#toggle-chat-btn:hover {
+  background: linear-gradient(145deg, #c99aff, #7f3be0);
+}
+
+  /* 親密度顯示 */
+#intimacy-display {
+  position: fixed;
+  bottom: 40px;
+  left: 20px;
+  background: rgba(255, 192, 203, 0.75);
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  z-index: 999;
+  backdrop-filter: blur(4px);
+  min-width: 200px;
+  pointer-events: none;
+}
+
+/* 進度條外框 */
+#intimacy-bar {
+  position: relative;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* 進度條填滿 (漸層) */
+#intimacy-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 10px;
+  transition: width 0.6s ease-in-out;
+  background: linear-gradient(90deg, #8e2de2, #ff4d6d, #ff85a1);
+  box-shadow: 0 0 8px rgba(255, 77, 109, 0.6);
+}
+
+/* 聊天框 */
+#chat-box {
+  width: 320px;
+  background: rgba(40, 22, 50, 0.75);
+  color: #fff;
+  font-size: 14px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 18px #6e3be0cc;
+  padding: 14px;
+  gap: 10px;
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+}
+
+/* 收合時聊天室隱藏 */
+#chat-container.collapsed #chat-box {
+  width: 0;
+  opacity: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* 展開，收合按鈕動畫 */
+#chat-container.collapsed #toggle-chat-btn {
+    transform: scale(0.75);
+    transition: transform 0.3s ease;
+}
+
+#chat-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  outline: none;
+  box-shadow: inset 0 0 6px #aa88ff77;
+  font-weight: 600;
+}
+
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+}
+
+.chat-message {
+  padding: 12px 16px;
+  border-radius: 20px;
+  max-width: 75%;
+  word-wrap: break-word;
+  line-height: 1.5;
+  box-shadow: 0 6px 10px #3a176388;
+  font-weight: 500;
+  transition: background 0.3s;
+  cursor: default;
+  user-select: text;
+}
+
+.chat-message.user {
+  background: linear-gradient(145deg, #5a98ff, #3465dd);
+  align-self: flex-end;
+}
+
+.chat-message.bot {
+  background: linear-gradient(145deg, #6844aa, #3c1f7b);
+  align-self: flex-start;
+  position: relative;
+  cursor: pointer;
+}
+
+.chat-message.collapsed .full-text {
+  display: none;
+}
+.chat-message.collapsed::after {
+  content: "（點擊展開）";
+  font-size: 12px;
+  color: #bbb;
+  margin-left: 8px;
+}
+
+.chat-message .full-text {
+  white-space: pre-wrap;
+}
+
+#chat-input-area {
+  display: flex;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  gap: 10px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 14px;
+}
+
+#chatInput {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  outline: none;
+  resize: none;
+  height: 40px;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  font-weight: 600;
+  box-shadow: inset 0 0 8px #9f88ff88;
+  transition: background 0.3s;
+}
+
+#chatInput:focus {
+  background: rgba(255,255,255,0.25);
+  box-shadow: 0 0 15px #bb99ffcc;
+}
+
+#chat-input-area button {
+  background: linear-gradient(145deg, #a566ff, #5b1cc8);
+  border: none;
+  color: white;
+  padding: 10px 18px;
+  font-size: 14px;
+  border-radius: 8px; 
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.3s;
+  user-select: none;
+}
+
+#chat-input-area button:hover {
+  background: linear-gradient(145deg, #c99aff, #7f3be0);
+}
+
+#chat-input-area button:active {
+  transform: scale(0.95);
+}
+
+#thinking-indicator {
+  display: none;
+  padding: 8px;
+  text-align: center;
+  color: #b9aaff;
+  font-weight: bold;
+  font-size: 16px;
+  font-style: italic;
+  user-select: none;
+  text-shadow: 0 0 5px #a183ffcc;
+}
+
+@keyframes dotsJump {
+  0%, 20% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-6px); }
+  100% { opacity: 0.3; transform: translateY(0); }
+}
+
+#thinking-indicator span.dot {
+  display: inline-block;
+  animation: dotsJump 1.5s infinite ease-in-out;
+}
+#thinking-indicator span.dot:nth-child(1) { animation-delay: 0s; }
+#thinking-indicator span.dot:nth-child(2) { animation-delay: 0.3s; }
+#thinking-indicator span.dot:nth-child(3) { animation-delay: 0.6s; }
+
+#floating-hint {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(80, 40, 120, 0.5);
+  padding: 10px 20px;
+  border-radius: 18px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 0 10px #8844ccaa;
+  z-index: 30;
+  pointer-events: none;
+  animation: hintFadeIn 0.5s ease-out;
+  backdrop-filter: blur(4px);
+}
+
+keyframes hintFadeIn {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}

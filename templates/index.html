@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live2D 聊天展示</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- 背景粒子動畫容器 -->
+  <div id="particles-js"></div>
+
+  <!-- Live2D 動作控制 -->
+  <div id="controls">
+    <button onclick="playMotion('Idle')">待機</button>
+    <button onclick="playMotion('Tap')">輕點</button>
+    <button onclick="playMotion('Flick')">微笑</button>
+    <button onclick="playMotion('FlickDown')">害羞</button>
+    <button onclick="playMotion('FlickUp')">開心</button>
+    <button onclick="playMotion('Tap@Body')">生氣</button>
+    <button onclick="playMotion('Flick@Body')">悲傷</button>
+    <hr style="border-color:#6e3be0bb;"/>
+    <button onclick="replayLastAudio()">重播語音</button>
+    <button onclick="clearSession()">清除對話記憶</button>
+    <button onclick="clearAllMemory()">清除所有記憶</button>
+  </div>
+  
+  <div id="intimacy-display">
+    <div id="intimacy-text">親密度:0(陌生)</div>
+    <div id="intimacy-bar">
+      <div id="intimacy-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- 聊天區容器，含聊天室本體和收合按鈕 -->
+  <div id="chat-container">
+    <button id="toggle-chat-btn" title="收合/展開聊天視窗">⬅️</button>
+    <div id="chat-box">
+      <input id="chat-search" placeholder="搜尋聊天內容..." />
+      <div id="chat-messages"></div>
+      <div id="thinking-indicator">
+        月讀醬思考中<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+      </div>
+      <div id="chat-input-area">
+        <textarea id="chatInput" placeholder="輸入文字..."></textarea>
+        <button onclick="handleChat()">送出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live2D 模組 -->
+  <script src="/static/libs/live2dcubismcore.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.2.4/dist/pixi.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
+  <script src="/static/script.js"></script>
+
+  <!-- tsParticles 套件 (背景粒子動畫) -->
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+  <script>
+    tsParticles.load("particles-js", {
+      fpsLimit: 60,
+      background: { color: "#111" },
+      particles: {
+        number: { value: 50, density: { enable: true, area: 800 } },
+        color: { value: ["#a58aff", "#ff92c8", "#8844cc"] },
+        shape: { type: "circle" },
+        opacity: { value: 0.5, random: true, anim: { enable: true, speed: 0.5, opacity_min: 0.1, sync: false } },
+        size: { value: 3, random: true, anim: { enable: true, speed: 3, size_min: 1, sync: false } },
+        move: { enable: true, speed: 1, direction: "none", random: true, straight: false, outModes: "out" }
+      },
+      interactivity: {
+        events: {
+          onHover: { enable: true, mode: "grab" },
+          onClick: { enable: true, mode: "push" }
+        },
+        modes: {
+          grab: { distance: 140, links: { opacity: 0.5 } },
+          push: { quantity: 4 }
+        }
+      },
+      detectRetina: true
+    });
+  </script>
+  <div id="floating-hint">LLM可能會出錯，請查證回覆內容</br>© Live2D Inc. Sample model provided by Live2D Inc. for non-commercial use only.</div>
+<!-- 開始畫面提示 -->
+<div id="audio-permission-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); color: white; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 2em;">
+    <p style="font-size: 1.3em; margin-bottom: 1em;">😊 歡迎使用月讀醬聊天室</p>
+    <p style="font-size: 1em; max-width: 600px; margin-bottom: 1.5em;">
+      按下✅ 我了解並開始聊天，即表示貴用戶同意接受使用條款。</br>若貴用戶不接受使用條款，請不要使用。
+    </p>
+    <div style="display: flex; gap: 1em; align-items: center;">
+      <button onclick="initAudioPermission()" style="padding: 0.8em 1.5em; font-size: 1.1em; border: none; border-radius: 999px; background: #f8a; color: white; cursor: pointer;">
+        ✅ 我了解並開始聊天
+      </button>
+      <button onclick="showTerms()" style="padding: 0.6em 1em; font-size: 0.9em; border: none; border-radius: 8px; background: #444; color: white; cursor: pointer;">
+        📄 查看使用條款
+      </button>
+    </div>
+  </div>
+
+  <!-- 使用條款 Modal -->
+  <div id="termsModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; color: white; padding: 2em; overflow-y: auto;">
+    <div style="max-width: 800px; margin: auto; background: #222; padding: 2em; border-radius: 12px; position: relative;">
+      <button onclick="closeTerms()" style="position: absolute; top: 1em; right: 1em; background: #f66; border: none; border-radius: 50%; width: 2em; height: 2em; font-weight: bold; color: white;">✕</button>
+        <h2>使用條款(TERMS OF USE)</h2>
+        <p>感謝您使用本專案(live2d_chatbot)。在使用本專案前，請詳細閱讀並同意以下條款：</p>
+
+        <h3>1. 服務說明</h3>
+        <ul>
+          <li>本專案提供 Live2D 聊天機器人服務，結合大語言模型(LLM)、Live2D 動畫角色與文字轉語音(TTS)。</li>
+          <li>本專案僅供學術研究及個人學習用途，禁止任何形式的商業使用。</li>
+        </ul>
+
+        <h3>2. 資料收集與隱私</h3>
+        <ul>
+          <li>本專案不會主動收集個人敏感資訊。</li>
+          <li>聊天內容僅用於提升互動體驗，不會用於其他用途。</li>
+          <li>使用者須自行負責輸入內容，開發者不對資料外洩負責。</li>
+        </ul>
+
+        <h3>3. 大語言模型(LLM)使用規範</h3>
+        <ul>
+          <li>Gemma 根據 <a href="https://ai.google.dev/gemma/terms" target="_blank">Gemma 使用條款</a> 提供並受其約束。</li>
+        </ul>
+
+        <h3>4. Live2D 模型版權</h3>
+        <ul>
+          <li>本專案使用了 Live2D 株式會社提供之樣本模型「桃濑日和」，僅供展示與互動用途。</li>
+          <li>該模型受限於 <a href="https://www.live2d.com/eula/live2d-sample-model-terms_zh-tw.html" target="_blank">Live2D 樣本模型使用條款</a>，請勿另作商業用途或未經授權的散佈。</li>
+        </ul>
+
+        <h3>5. VOICEVOX 語音合成技術</h3>
+        <ul>
+          <li>本專案使用 VOICEVOX 提供之開源文字轉語音引擎之 猫使ビィ的聲音庫。</li>
+          <li>依據 <a href="https://voicevox.hiroshiba.jp/" target="_blank">VOICEVOX 使用條款</a>，無論商用與非商用皆可使用。</li>
+          <li>不得進行未經授權的再發佈、逆向工程、或製作者不利益行為。</li>
+        </ul>
+
+        <h3>6. 使用者行為</h3>
+        <ul>
+          <li>禁止任何形式的濫用、攻擊或破壞服務。</li>
+          <li>違反者將被限制或終止使用權限。</li>
+        </ul>
+
+        <h3>7. 條約修訂</h3>
+        <ul>
+          <li>作者有權隨時修改本條款，請定期查閱以獲取最新資訊。</li>
+        </ul>
+
+        <p>如有其他疑問請聯絡專案維護者。</p>
+    </div>
+  </div>
+
+  <script>
+    // 切換聊天框收合
+    const chatContainer = document.getElementById('chat-container');
+    const toggleChatBtn = document.getElementById('toggle-chat-btn');
+
+    toggleChatBtn.addEventListener('click', () => {
+      chatContainer.classList.toggle('collapsed');
+      if (chatContainer.classList.contains('collapsed')) {
+        toggleChatBtn.textContent = '<';
+      } else {
+        toggleChatBtn.textContent = '>';
+      }
+    });
+
+    // 初始化箭頭方向
+    toggleChatBtn.textContent = '>';
+  </script>
+</body>
+
+</html>
