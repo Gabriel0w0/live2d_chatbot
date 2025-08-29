@@ -11,22 +11,44 @@ A cute and interactive Live2D virtual character chatbot powered by:
 - 🗣️ VOICEVOX local speech synthesis with character-specific voices
 - 🧠 Local LLM memory and response using Ollama + LangChain
 - 🎀 Floating web UI with chat toggle and animated elements
+- ⚡  Works fully offline (after setup)
 
+## System Architecture
+```bash
+User ── Frontend (Live2D + UI) ── Flask Backend ── LangChain + Ollama
+                                     │
+                                     └─ VOICEVOX (TTS)
+```
 ## Usage
+### 1. Install Ollama (Required)
+Download and install Ollama:  
+-> [https://ollama.com/download/linux](https://ollama.com/download/linux)  
 
+### 2. Backend Setup
 ```bash
 # Install Python dependencies
 pip install -r requirements.txt
-
-# Start Flask backend
-python run.py
-
-# Start VOICEVOX (Docker, port 50021)
-docker run -d --name voicevox_engine -p 50021:50021 voicevox/voicevox_engine
-
-Frontend is built using HTML, CSS, and JavaScript with a canvas-based layout.
-
 ```
+### 3. VOICEVOX Setup
+```bash
+#for Linux,MacOS
+docker run -d --name voicevox_engine -p 50021:50021 voicevox/voicevox_engine 
+```
+```bash
+#for Windows
+docker pull voicevox/voicevox_engine:nvidia-latest
+docker run --rm --gpus all -p '127.0.0.1:50021:50021' voicevox/voicevox_engine:nvidia-latest 
+```
+### 4. Frontend
+```bash
+Frontend is built with HTML, CSS, and JavaScript (canvas-based layout).
+Simply open index.html in your browser after starting the backend.
+```
+### 5. Start Flask backend
+```bash
+python run.py
+```
+
 
 ## Requirements
 *	Python 3.10+

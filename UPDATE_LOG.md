@@ -41,3 +41,6 @@
 ## 2025-08-23
 - Updated intimacy system.
 - Improve some code.
+
+## 2025-08-29
+- Updated README.md.
